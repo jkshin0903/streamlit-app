@@ -2,31 +2,31 @@
   "business_location": [
     {
       "location_id": 1,
-      "location_name": "서울 중앙 창고",
-      "location_type": "창고",
-      "address": "종로구 송월동 101",
-      "city": "서울특별시",
-      "state": "종로구",
+      "location_name": "Seoul Central Warehouse",
+      "location_type": "Warehouse",
+      "address": "101 Songwol-dong, Jongno-gu",
+      "city": "Seoul",
+      "state": "Jongno-gu",
       "zipcode": "110-101",
       "phone": "02-1234-5678"
     },
     {
       "location_id": 2,
-      "location_name": "한미 교역 (주)",
-      "location_type": "매장",
-      "address": "강남구 테헤란로 100",
-      "city": "서울특별시",
-      "state": "강남구",
+      "location_name": "Hanmi Trading Co.",
+      "location_type": "Store",
+      "address": "100 Teheran-ro, Gangnam-gu",
+      "city": "Seoul",
+      "state": "Gangnam-gu",
       "zipcode": "06234",
       "phone": "02-9876-5432"
     },
     {
       "location_id": 3,
-      "location_name": "부산 현장 A",
-      "location_type": "현장",
-      "address": "해운대구 센텀중앙로 50",
-      "city": "부산광역시",
-      "state": "해운대구",
+      "location_name": "Busan Site A",
+      "location_type": "Site",
+      "address": "50 Centum jungang-ro, Haeundae-gu",
+      "city": "Busan",
+      "state": "Haeundae-gu",
       "zipcode": "48058",
       "phone": "051-111-2222"
     }
@@ -34,34 +34,34 @@
   "vendor": [
     {
       "vendor_id": 1,
-      "vendor_name": "한일 특급 (주)",
-      "address": "서울시 마포구",
+      "vendor_name": "Hanil Express Co.",
+      "address": "Mapo-gu, Seoul",
       "phone": "02-555-0100",
       "fax": "02-555-0101"
     },
     {
       "vendor_id": 2,
-      "vendor_name": "테크공급",
-      "address": "경기도 성남시",
+      "vendor_name": "Tech Supply",
+      "address": "Seongnam, Gyeonggi",
       "phone": "031-777-8888",
       "fax": null
     }
   ],
   "product": [
-    {"product_no": 1, "product_name": "산업용 냉각기 A"},
-    {"product_no": 2, "product_name": "컨베이어 벨트 B"},
-    {"product_no": 3, "product_name": "제어 패널 C"}
+    {"product_no": 1, "product_name": "Industrial Cooler A"},
+    {"product_no": 2, "product_name": "Conveyor Belt B"},
+    {"product_no": 3, "product_name": "Control Panel C"}
   ],
   "technician": [
-    {"technician_id": 1, "technician_name": "유 가을"},
-    {"technician_id": 2, "technician_name": "김 기술"}
+    {"technician_id": 1, "technician_name": "Yoo Gaeul"},
+    {"technician_id": 2, "technician_name": "Kim Tech"}
   ],
   "purchase_request": [
     {
       "purchase_request_id": 1,
       "location_id": 2,
       "request_date": "2026-01-10",
-      "request_status": "승인"
+      "request_status": "Approved"
     }
   ],
   "purchase_request_item": [
@@ -73,7 +73,7 @@
       "purchase_order_id": 1,
       "vendor_id": 1,
       "purchase_order_date": "2026-01-12",
-      "purchase_order_status": "완료"
+      "purchase_order_status": "Completed"
     }
   ],
   "purchase_order_item": [
@@ -90,8 +90,8 @@
       "purchase_order_id": 1,
       "vendor_id": 1,
       "invoice_date": "2026-01-15",
-      "invoice_status": "결제완료",
-      "terms": "30일 이내 현금 결제"
+      "invoice_status": "Paid",
+      "terms": "Cash within 30 days"
     }
   ],
   "invoice_item": [
@@ -109,7 +109,7 @@
       "contract_date": "2025-06-01",
       "start_date": "2025-06-01",
       "end_date": "2026-12-31",
-      "contract_status": "활성",
+      "contract_status": "Active",
       "pickup_date": null,
       "pickup_reason": null
     }
@@ -119,9 +119,9 @@
       "serial_number": 10001,
       "invoice_number": 1001,
       "location_id": 2,
-      "machine_name": "냉각기 #1",
+      "machine_name": "Cooler #1",
       "model_name": "CR-A100",
-      "machine_status": "운영중"
+      "machine_status": "Operating"
     }
   ],
   "machine_contract_hst": [
@@ -141,11 +141,11 @@
       "from_location_id": 1,
       "to_location_id": 2,
       "location_id": 2,
-      "order_type": "이동",
-      "order_status": "완료",
+      "order_type": "Move",
+      "order_status": "Completed",
       "completion_date": "2006-01-22",
       "request_date": "2006-01-15",
-      "memo": "한미 교역 현장 배치 완료"
+      "memo": "Deployed to Hanmi Trading site"
     }
   ]
 }
