@@ -1,0 +1,151 @@
+{
+  "business_location": [
+    {
+      "location_id": 1,
+      "location_name": "서울 중앙 창고",
+      "location_type": "창고",
+      "address": "종로구 송월동 101",
+      "city": "서울특별시",
+      "state": "종로구",
+      "zipcode": "110-101",
+      "phone": "02-1234-5678"
+    },
+    {
+      "location_id": 2,
+      "location_name": "한미 교역 (주)",
+      "location_type": "매장",
+      "address": "강남구 테헤란로 100",
+      "city": "서울특별시",
+      "state": "강남구",
+      "zipcode": "06234",
+      "phone": "02-9876-5432"
+    },
+    {
+      "location_id": 3,
+      "location_name": "부산 현장 A",
+      "location_type": "현장",
+      "address": "해운대구 센텀중앙로 50",
+      "city": "부산광역시",
+      "state": "해운대구",
+      "zipcode": "48058",
+      "phone": "051-111-2222"
+    }
+  ],
+  "vendor": [
+    {
+      "vendor_id": 1,
+      "vendor_name": "한일 특급 (주)",
+      "address": "서울시 마포구",
+      "phone": "02-555-0100",
+      "fax": "02-555-0101"
+    },
+    {
+      "vendor_id": 2,
+      "vendor_name": "테크공급",
+      "address": "경기도 성남시",
+      "phone": "031-777-8888",
+      "fax": null
+    }
+  ],
+  "product": [
+    {"product_no": 1, "product_name": "산업용 냉각기 A"},
+    {"product_no": 2, "product_name": "컨베이어 벨트 B"},
+    {"product_no": 3, "product_name": "제어 패널 C"}
+  ],
+  "technician": [
+    {"technician_id": 1, "technician_name": "유 가을"},
+    {"technician_id": 2, "technician_name": "김 기술"}
+  ],
+  "purchase_request": [
+    {
+      "purchase_request_id": 1,
+      "location_id": 2,
+      "request_date": "2026-01-10",
+      "request_status": "승인"
+    }
+  ],
+  "purchase_request_item": [
+    {"purchase_request_id": 1, "product_no": 1, "quantity": 2},
+    {"purchase_request_id": 1, "product_no": 2, "quantity": 1}
+  ],
+  "purchase_order": [
+    {
+      "purchase_order_id": 1,
+      "vendor_id": 1,
+      "purchase_order_date": "2026-01-12",
+      "purchase_order_status": "완료"
+    }
+  ],
+  "purchase_order_item": [
+    {
+      "purchase_order_id": 1,
+      "product_no": 1,
+      "quantity": 2,
+      "unit_price": 1500000.0
+    }
+  ],
+  "invoice": [
+    {
+      "invoice_number": 1001,
+      "purchase_order_id": 1,
+      "vendor_id": 1,
+      "invoice_date": "2026-01-15",
+      "invoice_status": "결제완료",
+      "terms": "30일 이내 현금 결제"
+    }
+  ],
+  "invoice_item": [
+    {
+      "invoice_number": 1001,
+      "product_no": 1,
+      "quantity": 2,
+      "unit_price": 1500000.0
+    }
+  ],
+  "contract": [
+    {
+      "contract_id": 1,
+      "location_id": 2,
+      "contract_date": "2025-06-01",
+      "start_date": "2025-06-01",
+      "end_date": "2026-12-31",
+      "contract_status": "활성",
+      "pickup_date": null,
+      "pickup_reason": null
+    }
+  ],
+  "machine": [
+    {
+      "serial_number": 10001,
+      "invoice_number": 1001,
+      "location_id": 2,
+      "machine_name": "냉각기 #1",
+      "model_name": "CR-A100",
+      "machine_status": "운영중"
+    }
+  ],
+  "machine_contract_hst": [
+    {
+      "machine_contract_no": 1,
+      "serial_number": 10001,
+      "contract_id": 1,
+      "contract_start_date": "2025-06-01",
+      "contract_end_date": "2026-12-31"
+    }
+  ],
+  "order": [
+    {
+      "order_id": 30,
+      "serial_number": 10001,
+      "technician_id": 1,
+      "from_location_id": 1,
+      "to_location_id": 2,
+      "location_id": 2,
+      "order_type": "이동",
+      "order_status": "완료",
+      "completion_date": "2006-01-22",
+      "request_date": "2006-01-15",
+      "memo": "한미 교역 현장 배치 완료"
+    }
+  ]
+}
