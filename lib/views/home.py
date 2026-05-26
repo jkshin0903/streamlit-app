@@ -10,19 +10,14 @@ from lib.page_utils import setup_page
 def render() -> None:
     setup_page(HOME_TITLE, "🏭")
     st.title(HOME_TITLE)
-    st.caption("Mock in-memory data — aligns with GP2 MariaDB DDL")
+    st.caption("Live MariaDB (mng_db) via SSH tunnel")
 
     st.markdown(
         """
-This app is a **UI prototype** based on the GP2 MariaDB DDL.  
-Data is kept in an **in-memory mock store** loaded from `data/seed.json`.
+This app reads and writes the **mng_db** database (GP2 MariaDB DDL).  
+Configure `db.ini` (see `db.ini.example`) or set `DB_*` environment variables before use.
 """
     )
-
-    if st.button("Reset Demo Data"):
-        repository.reset_demo_data()
-        st.success("Restored from seed.json.")
-        st.experimental_rerun()
 
     st.divider()
 

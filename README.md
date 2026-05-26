@@ -1,7 +1,7 @@
 # Equipment And Procurement Management
 
 장비 운영 및 조달 관리 업무를 위한 **Streamlit UI 프로토타입**입니다.  
-[GP2 MariaDB DDL](docs/GP2_Maria.pdf) 스키마를 기준으로 화면을 구성했으며, 현재는 `data/seed.json`을 로드한 **in-memory 목 데이터**로 동작합니다. (MariaDB 연동은 추후 `lib/repository.py` 교체로 확장 가능)
+[GP2 MariaDB DDL](docs/GP2_Maria.pdf) 스키마를 기준으로 화면을 구성했으며, **mng_db** MariaDB에 SSH 터널로 연결해 조회·저장합니다.
 
 ## 실행 방법
 
@@ -24,9 +24,22 @@ streamlit run app.py
 
 브라우저가 열리면 왼쪽 **사이드바**에서 홈(`app`)과 각 페이지로 이동할 수 있습니다.
 
-### 3. 데모 데이터 초기화
+### 3. DB 연결 설정
 
-홈 화면의 **Reset Demo Data** 버튼을 누르면 `data/seed.json` 내용으로 저장소가 복원됩니다. 테스트 중 데이터를 망가뜨렸을 때 사용하세요.
+`db.ini.example`을 복사해 `db.ini`를 만들고 SSH·DB 계정을 입력합니다 (`*.ini`는 gitignore).
+
+```bash
+cp db.ini.example db.ini
+# db.ini 편집
+```
+
+환경 변수로도 설정할 수 있습니다: `DB_SSH_HOST`, `DB_SSH_USER`, `DB_SSH_PASSWORD`, `DB_USER`, `DB_PASSWORD` 등.
+
+연결 확인:
+
+```bash
+python connection_test.py
+```
 
 ## 페이지 구성
 
@@ -60,10 +73,11 @@ streamlit-app/
 ├── pages/                 # 멀티페이지 (01~10)
 ├── lib/
 │   ├── repository.py      # CRUD · FK 검증
-│   ├── mock_store.py      # session_state 목 저장소
+│   ├── db.py / db_store.py # SSH 터널 + MariaDB
 │   ├── labels.py          # 컬럼명 기반 UI 라벨
 │   └── components/        # 공통 폼·품목 위젯
-├── data/seed.json         # 초기 데모 데이터
+├── db.ini.example         # DB 연결 설정 예시
+├── data/seed.json         # (참고용) 예전 목 데이터 샘플
 ├── docs/                  # ER/DDL PDF, 주문 UI 참고 이미지
 └── tutorial/              # Streamlit 학습용 예제 (본 앱과 무관)
 ```
@@ -71,5 +85,5 @@ streamlit-app/
 ## 참고
 
 - UI 라벨은 DB 컬럼명을 영문 Title Case로 표시합니다 (예: `location_id` → Location Id).  
-- `order.memo` 등 DDL에 없는 필드는 목 데이터 전용입니다.  
+- `order.memo` 등 DDL에 없는 필드는 UI에만 표시되며 DB에는 저장되지 않습니다.  
 - `tutorial/` 폴더는 별도 학습 자료이며, 본 앱 실행에 필요하지 않습니다.

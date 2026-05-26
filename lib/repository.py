@@ -1,11 +1,11 @@
-"""CRUD facade over mock store with FK validation."""
+"""CRUD facade over MariaDB (mng_db) with FK validation."""
 
 from __future__ import annotations
 
-from datetime import date, datetime
 from typing import Any, Callable, Optional
 
-from lib import mock_store
+from lib import db_store
+from lib.db import DbConfigError, get_engine
 from lib.constants import (
     CONTRACT_STATUSES,
     INVOICE_STATUSES,
@@ -25,11 +25,16 @@ class RepositoryError(Exception):
 
 
 def init_if_needed() -> None:
-    mock_store.get_store()
+    try:
+        get_engine()
+    except DbConfigError:
+        raise
 
 
 def reset_demo_data() -> None:
-    mock_store.reset_store()
+    raise RepositoryError(
+        "Demo reset is disabled when using the live database."
+    )
 
 
 # --- helpers ---
@@ -38,7 +43,11 @@ def reset_demo_data() -> None:
 def _exists(table: str, pk_field: str, pk_value: Any) -> bool:
     if pk_value is None:
         return False
-    return any(r.get(pk_field) == pk_value for r in mock_store.table_rows(table))
+    return db_store.count_where(table, pk_field, pk_value) > 0
+
+
+def _has_ref(table: str, field: str, value: Any) -> bool:
+    return db_store.count_where(table, field, value) > 0
 
 
 def _validate_enum(value: str, allowed: list[str], field: str) -> None:
@@ -65,11 +74,11 @@ def _optional_iso_date(value: Any) -> Optional[str]:
 
 
 def list_locations() -> list[dict[str, Any]]:
-    return mock_store.table_rows("business_location")
+    return db_store.table_rows("business_location")
 
 
 def get_location(location_id: int) -> Optional[dict[str, Any]]:
-    return mock_store.find_by_pk("business_location", location_id)
+    return db_store.find_by_pk("business_location", location_id)
 
 
 def save_location(record: dict[str, Any]) -> dict[str, Any]:
@@ -78,8 +87,8 @@ def save_location(record: dict[str, Any]) -> dict[str, Any]:
         raise RepositoryError(f"{col('location_name')} is required.")
     lid = record.get("location_id")
     if lid is None:
-        record["location_id"] = mock_store.next_id("business_location")
-    return mock_store.upsert("business_location", record)
+        record["location_id"] = db_store.next_id("business_location")
+    return db_store.upsert("business_location", record)
 
 
 def delete_location(location_id: int) -> None:
@@ -92,22 +101,22 @@ def delete_location(location_id: int) -> None:
         ("order", "to_location_id"),
     ]
     for table, field in refs:
-        if any(r.get(field) == location_id for r in mock_store.table_rows(table)):
+        if _has_ref(table, field, location_id):
             raise RepositoryError(
                 f"Cannot delete location id {location_id}: referenced by {table}."
             )
-    mock_store.delete_row("business_location", location_id)
+    db_store.delete_row("business_location", location_id)
 
 
 # --- vendor ---
 
 
 def list_vendors() -> list[dict[str, Any]]:
-    return mock_store.table_rows("vendor")
+    return db_store.table_rows("vendor")
 
 
 def get_vendor(vendor_id: int) -> Optional[dict[str, Any]]:
-    return mock_store.find_by_pk("vendor", vendor_id)
+    return db_store.find_by_pk("vendor", vendor_id)
 
 
 def save_vendor(record: dict[str, Any]) -> dict[str, Any]:
@@ -116,83 +125,83 @@ def save_vendor(record: dict[str, Any]) -> dict[str, Any]:
     if not record.get("address"):
         raise RepositoryError(f"{col('address')} is required.")
     if record.get("vendor_id") is None:
-        record["vendor_id"] = mock_store.next_id("vendor")
-    return mock_store.upsert("vendor", record)
+        record["vendor_id"] = db_store.next_id("vendor")
+    return db_store.upsert("vendor", record)
 
 
 def delete_vendor(vendor_id: int) -> None:
     for table, field in [("purchase_order", "vendor_id"), ("invoice", "vendor_id")]:
-        if any(r.get(field) == vendor_id for r in mock_store.table_rows(table)):
+        if _has_ref(table, field, vendor_id):
             raise RepositoryError(
                 f"Cannot delete vendor id {vendor_id}: still referenced."
             )
-    mock_store.delete_row("vendor", vendor_id)
+    db_store.delete_row("vendor", vendor_id)
 
 
 # --- product ---
 
 
 def list_products() -> list[dict[str, Any]]:
-    return mock_store.table_rows("product")
+    return db_store.table_rows("product")
 
 
 def get_product(product_no: int) -> Optional[dict[str, Any]]:
-    return mock_store.find_by_pk("product", product_no)
+    return db_store.find_by_pk("product", product_no)
 
 
 def save_product(record: dict[str, Any]) -> dict[str, Any]:
     if not record.get("product_name"):
         raise RepositoryError(f"{col('product_name')} is required.")
     if record.get("product_no") is None:
-        record["product_no"] = mock_store.next_id("product")
-    return mock_store.upsert("product", record)
+        record["product_no"] = db_store.next_id("product")
+    return db_store.upsert("product", record)
 
 
 def delete_product(product_no: int) -> None:
     for table in ("purchase_request_item", "purchase_order_item", "invoice_item"):
-        if any(r.get("product_no") == product_no for r in mock_store.table_rows(table)):
+        if _has_ref(table, "product_no", product_no):
             raise RepositoryError(
                 f"Cannot delete product no {product_no}: still referenced in line items."
             )
-    mock_store.delete_row("product", product_no)
+    db_store.delete_row("product", product_no)
 
 
 # --- technician ---
 
 
 def list_technicians() -> list[dict[str, Any]]:
-    return mock_store.table_rows("technician")
+    return db_store.table_rows("technician")
 
 
 def get_technician(technician_id: int) -> Optional[dict[str, Any]]:
-    return mock_store.find_by_pk("technician", technician_id)
+    return db_store.find_by_pk("technician", technician_id)
 
 
 def save_technician(record: dict[str, Any]) -> dict[str, Any]:
     if not record.get("technician_name"):
         raise RepositoryError(f"{col('technician_name')} is required.")
     if record.get("technician_id") is None:
-        record["technician_id"] = mock_store.next_id("technician")
-    return mock_store.upsert("technician", record)
+        record["technician_id"] = db_store.next_id("technician")
+    return db_store.upsert("technician", record)
 
 
 def delete_technician(technician_id: int) -> None:
-    if any(r.get("technician_id") == technician_id for r in mock_store.table_rows("order")):
+    if _has_ref("order", "technician_id", technician_id):
         raise RepositoryError(
             "Cannot delete technician: referenced by order."
         )
-    mock_store.delete_row("technician", technician_id)
+    db_store.delete_row("technician", technician_id)
 
 
 # --- contract ---
 
 
 def list_contracts() -> list[dict[str, Any]]:
-    return mock_store.table_rows("contract")
+    return db_store.table_rows("contract")
 
 
 def get_contract(contract_id: int) -> Optional[dict[str, Any]]:
-    return mock_store.find_by_pk("contract", contract_id)
+    return db_store.find_by_pk("contract", contract_id)
 
 
 def save_contract(record: dict[str, Any]) -> dict[str, Any]:
@@ -204,30 +213,27 @@ def save_contract(record: dict[str, Any]) -> dict[str, Any]:
     record["end_date"] = _iso_date(record["end_date"])
     record["pickup_date"] = _optional_iso_date(record.get("pickup_date"))
     if record.get("contract_id") is None:
-        record["contract_id"] = mock_store.next_id("contract")
-    return mock_store.upsert("contract", record)
+        record["contract_id"] = db_store.next_id("contract")
+    return db_store.upsert("contract", record)
 
 
 def delete_contract(contract_id: int) -> None:
-    if any(
-        r.get("contract_id") == contract_id
-        for r in mock_store.table_rows("machine_contract_hst")
-    ):
+    if _has_ref("machine_contract_hst", "contract_id", contract_id):
         raise RepositoryError(
             "Cannot delete contract: machine contract history exists."
         )
-    mock_store.delete_row("contract", contract_id)
+    db_store.delete_row("contract", contract_id)
 
 
 # --- machine ---
 
 
 def list_machines() -> list[dict[str, Any]]:
-    return mock_store.table_rows("machine")
+    return db_store.table_rows("machine")
 
 
 def get_machine(serial_number: int) -> Optional[dict[str, Any]]:
-    return mock_store.find_by_pk("machine", serial_number)
+    return db_store.find_by_pk("machine", serial_number)
 
 
 def save_machine(record: dict[str, Any]) -> dict[str, Any]:
@@ -238,27 +244,22 @@ def save_machine(record: dict[str, Any]) -> dict[str, Any]:
     if loc is not None and not _exists("business_location", "location_id", loc):
         raise RepositoryError(f"Invalid {col('location_id')}.")
     if record.get("serial_number") is None:
-        record["serial_number"] = mock_store.next_id("machine")
-    return mock_store.upsert("machine", record)
+        record["serial_number"] = db_store.next_id("machine")
+    return db_store.upsert("machine", record)
 
 
 def delete_machine(serial_number: int) -> None:
-    if any(r.get("serial_number") == serial_number for r in mock_store.table_rows("order")):
+    if _has_ref("order", "serial_number", serial_number):
         raise RepositoryError("Cannot delete machine: referenced by order.")
-    store = mock_store.get_store()
-    store["machine_contract_hst"] = [
-        r
-        for r in store["machine_contract_hst"]
-        if r.get("serial_number") != serial_number
-    ]
-    mock_store.delete_row("machine", serial_number)
+    db_store.delete_machine_contract_hst_by_serial(serial_number)
+    db_store.delete_row("machine", serial_number)
 
 
 # --- machine_contract_hst ---
 
 
 def list_machine_contract_hst(serial_number: int) -> list[dict[str, Any]]:
-    return mock_store.filter_items("machine_contract_hst", "serial_number", serial_number)
+    return db_store.filter_items("machine_contract_hst", "serial_number", serial_number)
 
 
 def save_machine_contract_hst(record: dict[str, Any]) -> dict[str, Any]:
@@ -269,19 +270,19 @@ def save_machine_contract_hst(record: dict[str, Any]) -> dict[str, Any]:
     record["contract_start_date"] = _iso_date(record["contract_start_date"])
     record["contract_end_date"] = _iso_date(record["contract_end_date"])
     if record.get("machine_contract_no") is None:
-        record["machine_contract_no"] = mock_store.next_id("machine_contract_hst")
-    return mock_store.upsert("machine_contract_hst", record)
+        record["machine_contract_no"] = db_store.next_id("machine_contract_hst")
+    return db_store.upsert("machine_contract_hst", record)
 
 
 # --- order ---
 
 
 def list_orders() -> list[dict[str, Any]]:
-    return mock_store.table_rows("order")
+    return db_store.table_rows("order")
 
 
 def get_order(order_id: int) -> Optional[dict[str, Any]]:
-    return mock_store.find_by_pk("order", order_id)
+    return db_store.find_by_pk("order", order_id)
 
 
 def save_order(record: dict[str, Any]) -> dict[str, Any]:
@@ -304,23 +305,23 @@ def save_order(record: dict[str, Any]) -> dict[str, Any]:
     record["request_date"] = _iso_date(record["request_date"])
     record["completion_date"] = _optional_iso_date(record.get("completion_date"))
     if record.get("order_id") is None:
-        record["order_id"] = mock_store.next_id("order")
-    return mock_store.upsert("order", record)
+        record["order_id"] = db_store.next_id("order")
+    return db_store.upsert("order", record)
 
 
 def delete_order(order_id: int) -> None:
-    mock_store.delete_row("order", order_id)
+    db_store.delete_row("order", order_id)
 
 
 # --- purchase_request ---
 
 
 def list_purchase_requests() -> list[dict[str, Any]]:
-    return mock_store.table_rows("purchase_request")
+    return db_store.table_rows("purchase_request")
 
 
 def get_purchase_request(pr_id: int) -> Optional[dict[str, Any]]:
-    header = mock_store.find_by_pk("purchase_request", pr_id)
+    header = db_store.find_by_pk("purchase_request", pr_id)
     if not header:
         return None
     header = dict(header)
@@ -329,7 +330,7 @@ def get_purchase_request(pr_id: int) -> Optional[dict[str, Any]]:
 
 
 def list_purchase_request_items(pr_id: int) -> list[dict[str, Any]]:
-    return mock_store.filter_items("purchase_request_item", "purchase_request_id", pr_id)
+    return db_store.filter_items("purchase_request_item", "purchase_request_id", pr_id)
 
 
 def save_purchase_request(header: dict[str, Any], items: list[dict[str, Any]]) -> dict[str, Any]:
@@ -341,15 +342,15 @@ def save_purchase_request(header: dict[str, Any], items: list[dict[str, Any]]) -
     header["request_date"] = _iso_date(header["request_date"])
     pr_id = header.get("purchase_request_id")
     if pr_id is None:
-        pr_id = mock_store.next_id("purchase_request")
+        pr_id = db_store.next_id("purchase_request")
         header["purchase_request_id"] = pr_id
     for item in items:
         if not _exists("product", "product_no", item["product_no"]):
             raise RepositoryError(f"Invalid {col('product_no')}.")
         if int(item["quantity"]) < 1:
             raise RepositoryError(f"{col('quantity')} must be at least 1.")
-    mock_store.upsert("purchase_request", header)
-    mock_store.replace_items(
+    db_store.upsert("purchase_request", header)
+    db_store.replace_items(
         "purchase_request_item",
         "purchase_request_id",
         pr_id,
@@ -359,19 +360,19 @@ def save_purchase_request(header: dict[str, Any], items: list[dict[str, Any]]) -
 
 
 def delete_purchase_request(pr_id: int) -> None:
-    mock_store.replace_items("purchase_request_item", "purchase_request_id", pr_id, [])
-    mock_store.delete_row("purchase_request", pr_id)
+    db_store.replace_items("purchase_request_item", "purchase_request_id", pr_id, [])
+    db_store.delete_row("purchase_request", pr_id)
 
 
 # --- purchase_order ---
 
 
 def list_purchase_orders() -> list[dict[str, Any]]:
-    return mock_store.table_rows("purchase_order")
+    return db_store.table_rows("purchase_order")
 
 
 def get_purchase_order(po_id: int) -> Optional[dict[str, Any]]:
-    header = mock_store.find_by_pk("purchase_order", po_id)
+    header = db_store.find_by_pk("purchase_order", po_id)
     if not header:
         return None
     header = dict(header)
@@ -380,7 +381,7 @@ def get_purchase_order(po_id: int) -> Optional[dict[str, Any]]:
 
 
 def list_purchase_order_items(po_id: int) -> list[dict[str, Any]]:
-    return mock_store.filter_items("purchase_order_item", "purchase_order_id", po_id)
+    return db_store.filter_items("purchase_order_item", "purchase_order_id", po_id)
 
 
 def save_purchase_order(header: dict[str, Any], items: list[dict[str, Any]]) -> dict[str, Any]:
@@ -394,7 +395,7 @@ def save_purchase_order(header: dict[str, Any], items: list[dict[str, Any]]) -> 
     header["purchase_order_date"] = _iso_date(header["purchase_order_date"])
     po_id = header.get("purchase_order_id")
     if po_id is None:
-        po_id = mock_store.next_id("purchase_order")
+        po_id = db_store.next_id("purchase_order")
         header["purchase_order_id"] = po_id
     norm_items = []
     for item in items:
@@ -413,8 +414,8 @@ def save_purchase_order(header: dict[str, Any], items: list[dict[str, Any]]) -> 
                 "unit_price": price,
             }
         )
-    mock_store.upsert("purchase_order", header)
-    mock_store.replace_items(
+    db_store.upsert("purchase_order", header)
+    db_store.replace_items(
         "purchase_order_item",
         "purchase_order_id",
         po_id,
@@ -424,12 +425,12 @@ def save_purchase_order(header: dict[str, Any], items: list[dict[str, Any]]) -> 
 
 
 def delete_purchase_order(po_id: int) -> None:
-    if any(r.get("purchase_order_id") == po_id for r in mock_store.table_rows("invoice")):
+    if _has_ref("invoice", "purchase_order_id", po_id):
         raise RepositoryError(
             "Cannot delete purchase order: linked invoice exists."
         )
-    mock_store.replace_items("purchase_order_item", "purchase_order_id", po_id, [])
-    mock_store.delete_row("purchase_order", po_id)
+    db_store.replace_items("purchase_order_item", "purchase_order_id", po_id, [])
+    db_store.delete_row("purchase_order", po_id)
 
 
 def get_po_vendor_id(po_id: int) -> Optional[int]:
@@ -441,11 +442,11 @@ def get_po_vendor_id(po_id: int) -> Optional[int]:
 
 
 def list_invoices() -> list[dict[str, Any]]:
-    return mock_store.table_rows("invoice")
+    return db_store.table_rows("invoice")
 
 
 def get_invoice(invoice_number: int) -> Optional[dict[str, Any]]:
-    header = mock_store.find_by_pk("invoice", invoice_number)
+    header = db_store.find_by_pk("invoice", invoice_number)
     if not header:
         return None
     header = dict(header)
@@ -454,7 +455,7 @@ def get_invoice(invoice_number: int) -> Optional[dict[str, Any]]:
 
 
 def list_invoice_items(invoice_number: int) -> list[dict[str, Any]]:
-    return mock_store.filter_items("invoice_item", "invoice_number", invoice_number)
+    return db_store.filter_items("invoice_item", "invoice_number", invoice_number)
 
 
 def save_invoice(header: dict[str, Any], items: list[dict[str, Any]]) -> dict[str, Any]:
@@ -474,7 +475,7 @@ def save_invoice(header: dict[str, Any], items: list[dict[str, Any]]) -> dict[st
     header["invoice_date"] = _iso_date(header["invoice_date"])
     inv_no = header.get("invoice_number")
     if inv_no is None:
-        inv_no = mock_store.next_id("invoice")
+        inv_no = db_store.next_id("invoice")
         header["invoice_number"] = inv_no
     norm_items = []
     for item in items:
@@ -493,8 +494,8 @@ def save_invoice(header: dict[str, Any], items: list[dict[str, Any]]) -> dict[st
                 "unit_price": price,
             }
         )
-    mock_store.upsert("invoice", header)
-    mock_store.replace_items(
+    db_store.upsert("invoice", header)
+    db_store.replace_items(
         "invoice_item",
         "invoice_number",
         inv_no,
@@ -504,15 +505,12 @@ def save_invoice(header: dict[str, Any], items: list[dict[str, Any]]) -> dict[st
 
 
 def delete_invoice(invoice_number: int) -> None:
-    if any(
-        r.get("invoice_number") == invoice_number
-        for r in mock_store.table_rows("machine")
-    ):
+    if _has_ref("machine", "invoice_number", invoice_number):
         raise RepositoryError(
             "Cannot delete invoice: linked machine exists."
         )
-    mock_store.replace_items("invoice_item", "invoice_number", invoice_number, [])
-    mock_store.delete_row("invoice", invoice_number)
+    db_store.replace_items("invoice_item", "invoice_number", invoice_number, [])
+    db_store.delete_row("invoice", invoice_number)
 
 
 # --- display helpers ---

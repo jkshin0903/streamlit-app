@@ -1,0 +1,14 @@
+# Copy to db.ini and fill in credentials (db.ini is gitignored via *.ini)
+
+[ssh]
+host = 165.132.192.167
+port = 1111
+username = your_ssh_user
+password = your_ssh_password
+
+[database]
+user = your_db_user
+password = your_db_password
+name = mng_db
+remote_host = 127.0.0.1
+remote_port = 3306

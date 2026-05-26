@@ -19,7 +19,15 @@ def setup_page(title: str, icon: str = "") -> None:
         st.set_page_config(page_title=title, page_icon=icon, layout="wide")
     else:
         st.set_page_config(page_title=title, layout="wide")
-    repository.init_if_needed()
+    try:
+        repository.init_if_needed()
+    except Exception as e:
+        from lib.db import DbConfigError
+
+        if isinstance(e, DbConfigError):
+            st.error(str(e))
+            st.stop()
+        raise
 
 
 def begin_page(entity: str, icon: str = "") -> str:
