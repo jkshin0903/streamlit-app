@@ -72,7 +72,7 @@ streamlit-app/
 ├── app.py                 # 진입점 (홈)
 ├── pages/                 # 멀티페이지 (01~10)
 ├── lib/
-│   ├── repository.py      # CRUD · FK 검증
+│   ├── repository/        # 도메인별 CRUD · FK 검증
 │   ├── db.py / db_store.py # SSH 터널 + MariaDB
 │   ├── labels.py          # 컬럼명 기반 UI 라벨
 │   └── components/        # 공통 폼·품목 위젯
