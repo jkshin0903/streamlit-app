@@ -1,7 +1,7 @@
 # Equipment And Procurement Management
 
 장비 운영 및 조달 관리 업무를 위한 **Streamlit UI 프로토타입**입니다.  
-[GP2 MariaDB DDL](docs/GP2_Maria.pdf) 스키마를 기준으로 화면을 구성했으며, **mng_db** MariaDB에 SSH 터널로 연결해 조회·저장합니다.
+[GP2 MariaDB DDL](docs/GP2_Maria.pdf) 스키마를 기준으로 화면을 구성했으며, **MySQL/MariaDB**에 직접 연결(Aiven 등)하거나 SSH 터널로 조회·저장합니다.
 
 ## 실행 방법
 
@@ -26,20 +26,52 @@ streamlit run app.py
 
 ### 3. DB 연결 설정
 
-`db.ini.example`을 복사해 `db.ini`를 만들고 SSH·DB 계정을 입력합니다 (`*.ini`는 gitignore).
+`db.ini.example`을 복사해 `db.ini`를 만듭니다 (`*.ini`는 gitignore).
 
-```bash
-cp db.ini.example db.ini
-# db.ini 편집
+**Aiven / 클라우드 MySQL (직접 연결)**
+
+```ini
+[connection]
+mode = direct
+
+[database]
+host = your-service.aivencloud.com
+port = 26706
+user = avnadmin
+password = ...
+name = defaultdb
+ssl_ca = ca.pem
 ```
 
-환경 변수로도 설정할 수 있습니다: `DB_SSH_HOST`, `DB_SSH_USER`, `DB_SSH_PASSWORD`, `DB_USER`, `DB_PASSWORD` 등.
+프로젝트 루트에 Aiven에서 받은 **`ca.pem`** 을 두면 TLS로 접속합니다 (`ssl_ca` 비우면 SSL 미사용).
+
+**기존 SSH 터널 + mng_db**
+
+```ini
+[connection]
+mode = ssh
+
+[ssh]
+host = ...
+port = 1111
+...
+
+[database]
+name = mng_db
+remote_host = 127.0.0.1
+remote_port = 3306
+```
+
+환경 변수: 직접 연결 `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` — SSH `DB_SSH_HOST`, `DB_SSH_USER`, …
 
 연결 확인:
 
 ```bash
-python connection_test.py
+python connection_test_aiven.py   # direct 모드
+python connection_test.py         # db.ini 기준 (direct/ssh)
 ```
+
+Aiven의 `defaultdb`에 GP2 테이블이 없으면 DDL을 먼저 적용해야 페이지 CRUD가 동작합니다.
 
 ## 페이지 구성
 

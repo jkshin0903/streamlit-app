@@ -137,3 +137,4 @@ dmypy.json
 
 docs/
 connection_test.py
+ca.pem

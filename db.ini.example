@@ -1,14 +1,29 @@
 # Copy to db.ini and fill in credentials (db.ini is gitignored via *.ini)
 
-[ssh]
-host = 165.132.192.167
-port = 1111
-username = your_ssh_user
-password = your_ssh_password
+[connection]
+# direct = cloud MySQL (e.g. Aiven), ssh = tunnel to on-prem MariaDB
+mode = direct
 
 [database]
-user = your_db_user
+host = your-service.aivencloud.com
+port = 26706
+user = avnadmin
 password = your_db_password
-name = mng_db
-remote_host = 127.0.0.1
-remote_port = 3306
+name = defaultdb
+charset = utf8mb4
+connect_timeout = 10
+read_timeout = 10
+write_timeout = 10
+# Aiven CA bundle (download from console); path relative to project root
+ssl_ca = ca.pem
+
+# --- SSH mode only (connection.mode = ssh) ---
+# name = mng_db
+# remote_host = 127.0.0.1
+# remote_port = 3306
+
+# [ssh]
+# host = your_ssh_host
+# port = 22
+# username = your_ssh_user
+# password = your_ssh_password
