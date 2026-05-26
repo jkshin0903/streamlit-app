@@ -51,17 +51,17 @@ with col_list:
         if c1.button(BTN_OPEN):
             st.session_state[edit_key] = int(pick)
             st.session_state.pop("order_is_new", None)
-            st.experimental_rerun()
+            st.rerun()
         if c2.button(BTN_NEW):
             st.session_state[edit_key] = None
             st.session_state["order_is_new"] = True
-            st.experimental_rerun()
+            st.rerun()
     else:
         st.info(MSG_SELECT_ROW)
         if st.button(f"{BTN_NEW} {col('order')}"):
             st.session_state[edit_key] = None
             st.session_state["order_is_new"] = True
-            st.experimental_rerun()
+            st.rerun()
 
 with col_detail:
     is_new = st.session_state.get("order_is_new", False)
@@ -163,7 +163,7 @@ with col_detail:
 
         if cancel_clicked:
             st.session_state.pop("order_is_new", None)
-            st.experimental_rerun()
+            st.rerun()
 
         if delete_clicked and edit_id and handle_repo_error(
             lambda: repository.delete_order(edit_id)
@@ -171,7 +171,7 @@ with col_detail:
             st.session_state.pop(edit_key, None)
             st.session_state.pop("order_is_new", None)
             st.success(MSG_DELETED)
-            st.experimental_rerun()
+            st.rerun()
 
         if save_clicked:
             if to_loc is None or serial is None or customer_loc is None:
@@ -198,4 +198,4 @@ with col_detail:
                     st.session_state[edit_key] = result["order_id"]
                     st.session_state.pop("order_is_new", None)
                     st.success(MSG_SAVED)
-                    st.experimental_rerun()
+                    st.rerun()

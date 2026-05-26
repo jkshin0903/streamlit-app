@@ -55,7 +55,7 @@ def render_master_crud(
             pick = st.selectbox(col(pk_field), labels, index=idx, key=f"{pk_field}_pick")
             if st.button(BTN_EDIT_SELECTED, key=f"{pk_field}_edit_btn"):
                 st.session_state[edit_key] = type(ids[0])(pick)
-                st.experimental_rerun()
+                st.rerun()
         else:
             st.info(MSG_NO_ROWS)
 
@@ -66,7 +66,7 @@ def render_master_crud(
 
         if st.button(BTN_NEW_MODE, key=f"{pk_field}_new"):
             st.session_state.pop(edit_key, None)
-            st.experimental_rerun()
+            st.rerun()
 
         if not is_new:
             st.caption(f"Editing {col(pk_field)} {edit_id}")
@@ -84,7 +84,7 @@ def render_master_crud(
 
                 if handle_repo_error(_del):
                     st.success(MSG_DELETED)
-                    st.experimental_rerun()
+                    st.rerun()
 
         if submitted:
             if not is_new:
@@ -102,4 +102,4 @@ def render_master_crud(
             result = handle_repo_error(_save)
             if result:
                 st.success(MSG_SAVED)
-                st.experimental_rerun()
+                st.rerun()

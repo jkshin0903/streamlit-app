@@ -41,7 +41,7 @@ with tab_list:
         pick = st.selectbox(col("serial_number"), labels, index=idx)
         if st.button("Edit Selected"):
             st.session_state[edit_key] = int(pick)
-            st.experimental_rerun()
+            st.rerun()
     else:
         st.info(MSG_NO_ROWS)
 
@@ -50,7 +50,7 @@ with tab_form:
     record = repository.get_machine(edit_id) if edit_id else None
     if st.button(BTN_NEW_MODE):
         st.session_state.pop(edit_key, None)
-        st.experimental_rerun()
+        st.rerun()
 
     with st.form("machine_form"):
         if record:
@@ -97,7 +97,7 @@ with tab_form:
         if handle_repo_error(lambda: repository.delete_machine(edit_id)):
             st.session_state.pop(edit_key, None)
             st.success(MSG_DELETED)
-            st.experimental_rerun()
+            st.rerun()
 
     if submitted:
         if record:
@@ -107,7 +107,7 @@ with tab_form:
         elif handle_repo_error(lambda: repository.save_machine(data)):
             st.session_state[edit_key] = data["serial_number"]
             st.success(MSG_SAVED)
-            st.experimental_rerun()
+            st.rerun()
 
 with tab_hst:
     machines = repository.list_machines()
@@ -166,4 +166,4 @@ with tab_hst:
                 )
             ):
                 st.success(MSG_SAVED)
-                st.experimental_rerun()
+                st.rerun()

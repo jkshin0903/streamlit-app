@@ -46,7 +46,7 @@ with tab_list:
             st.session_state[edit_key] = int(pick)
             rec = repository.get_invoice(int(pick))
             init_lines(LINES_KEY, rec["items"] if rec else None)
-            st.experimental_rerun()
+            st.rerun()
     else:
         st.info(f"No {col('invoice')} records.")
 
@@ -58,7 +58,7 @@ with tab_form:
         st.session_state.pop(edit_key, None)
         clear_lines(LINES_KEY)
         init_lines(LINES_KEY, None)
-        st.experimental_rerun()
+        st.rerun()
 
     if record:
         init_lines(LINES_KEY, record.get("items"))
@@ -130,11 +130,11 @@ with tab_form:
             if result:
                 st.session_state[edit_key] = result["invoice_number"]
                 st.success(MSG_SAVED)
-                st.experimental_rerun()
+                st.rerun()
 
     if edit_id and st.button(BTN_DELETE):
         if handle_repo_error(lambda: repository.delete_invoice(edit_id)):
             st.session_state.pop(edit_key, None)
             clear_lines(LINES_KEY)
             st.success(MSG_DELETED)
-            st.experimental_rerun()
+            st.rerun()

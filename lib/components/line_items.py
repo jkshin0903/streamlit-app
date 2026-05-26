@@ -38,7 +38,7 @@ def render_line_items(
     if st.button(BTN_ADD_LINE, key=f"{form_key_prefix}_add"):
         lines.append({"product_no": None, "quantity": 1, "unit_price": 0.0})
         st.session_state[state_key] = lines
-        st.experimental_rerun()
+        st.rerun()
 
     products = repository.list_products()
     product_labels, product_map = repository.id_options(
@@ -103,7 +103,7 @@ def render_line_items(
         if not lines:
             lines.append({"product_no": None, "quantity": 1, "unit_price": 0.0})
         st.session_state[state_key] = lines
-        st.experimental_rerun()
+        st.rerun()
 
     if show_unit_price:
         st.metric("Total Amount", f"₩{total:,.0f}")
