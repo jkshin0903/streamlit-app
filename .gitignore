@@ -2,7 +2,7 @@
 *.csv
 *.xls
 *.xlsx
-*.txt
+# *.txt
 *.ini
 
 # Byte-compiled / optimized / DLL files
@@ -21,7 +21,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+# lib/
 lib64/
 parts/
 sdist/
@@ -134,3 +134,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+docs/
+connection_test.py
