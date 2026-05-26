@@ -47,7 +47,7 @@ def render_master_crud(
             df = pd.DataFrame(rows)
             display_cols = [c for c in list_columns if c in df.columns]
             df = df[display_cols].rename(columns=display_labels)
-            st.dataframe(df, use_container_width=True, hide_index=True)
+            st.dataframe(df, width="stretch", hide_index=True)
             ids = [r[pk_field] for r in rows]
             labels = [str(i) for i in ids]
             cur = st.session_state.get(edit_key)

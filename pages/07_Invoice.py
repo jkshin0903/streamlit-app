@@ -34,7 +34,7 @@ with tab_list:
     if invoices:
         st.dataframe(
             pd.DataFrame(invoices).rename(columns={c: col(c) for c in invoices[0].keys()}),
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
         )
         ids = [i["invoice_number"] for i in invoices]

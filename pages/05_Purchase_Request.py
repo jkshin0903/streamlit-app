@@ -35,7 +35,7 @@ with tab_list:
     if prs:
         st.dataframe(
             pd.DataFrame(prs).rename(columns={c: col(c) for c in prs[0].keys()}),
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
         )
         ids = [p["purchase_request_id"] for p in prs]

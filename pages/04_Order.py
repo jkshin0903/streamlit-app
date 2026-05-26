@@ -41,7 +41,7 @@ with col_list:
         df = pd.DataFrame(orders)[order_cols].rename(
             columns={c: col(c) for c in order_cols}
         )
-        st.dataframe(df, use_container_width=True, hide_index=True)
+        st.dataframe(df, width="stretch", hide_index=True)
         ids = [o["order_id"] for o in orders]
         labels = [str(i) for i in ids]
         cur = st.session_state.get(edit_key)

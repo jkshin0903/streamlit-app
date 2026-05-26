@@ -33,7 +33,7 @@ with tab_list:
         df = pd.DataFrame(machines)[
             ["serial_number", "machine_name", "model_name", "machine_status", "location_id"]
         ].rename(columns={c: col(c) for c in ["serial_number", "machine_name", "model_name", "machine_status", "location_id"]})
-        st.dataframe(df, use_container_width=True, hide_index=True)
+        st.dataframe(df, width="stretch", hide_index=True)
         ids = [m["serial_number"] for m in machines]
         labels = [str(i) for i in ids]
         cur = st.session_state.get(edit_key)
@@ -137,7 +137,7 @@ with tab_hst:
                             ]
                         }
                     ),
-                    use_container_width=True,
+                    width="stretch",
                     hide_index=True,
                 )
             else:

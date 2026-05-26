@@ -19,7 +19,7 @@ def list_with_selection(
         st.info(empty_message)
         return None
 
-    st.dataframe(df, use_container_width=True, hide_index=True)
+    st.dataframe(df, width="stretch", hide_index=True)
 
     options = df[id_column].tolist()
     labels = [str(o) for o in options]
