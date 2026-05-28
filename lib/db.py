@@ -1,4 +1,4 @@
-"""MariaDB/MySQL engine — direct (e.g. Aiven) or SSH tunnel."""
+"""MariaDB/MySQL engine (direct connection only)."""
 
 from __future__ import annotations
 
@@ -11,7 +11,6 @@ from typing import Any, Optional
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine, URL
-from sshtunnel import SSHTunnelForwarder
 
 ROOT = Path(__file__).resolve().parent.parent
 CONFIG_PATH = ROOT / "db.ini"
@@ -49,7 +48,7 @@ def resolve_ssl_ca(path: Optional[str], *, auto_default: bool = False) -> Option
 
 
 def load_db_config() -> dict[str, Any]:
-    """Load connection settings from st.secrets, env, or db.ini."""
+    """Load direct connection settings from st.secrets, env, or db.ini."""
     secret_cfg = _config_from_streamlit_secrets()
     if secret_cfg is not None:
         return secret_cfg
@@ -57,50 +56,24 @@ def load_db_config() -> dict[str, Any]:
     if os.environ.get("DB_HOST"):
         return _config_direct_from_env()
 
-    if os.environ.get("DB_SSH_HOST"):
-        return _config_ssh_from_env()
-
     cfg = _read_ini()
-    mode = cfg.get("connection", "mode", fallback="direct").strip().lower()
-    if mode not in ("direct", "ssh"):
-        raise DbConfigError(
-            f"Invalid connection mode {mode!r} in db.ini — use 'direct' or 'ssh'."
-        )
-
+    db = cfg["database"]
     base = {
-        "mode": mode,
-        "db_user": cfg.get("database", "user"),
-        "db_password": cfg.get("database", "password"),
-        "db_name": cfg.get("database", "name", fallback="defaultdb"),
-        "charset": cfg.get("database", "charset", fallback="utf8mb4"),
+        "db_host": db.get("host", ""),
+        "db_port": cfg.getint("database", "port", fallback=3306),
+        "db_user": db.get("user", ""),
+        "db_password": db.get("password", ""),
+        "db_name": db.get("name", "defaultdb"),
+        "charset": db.get("charset", "utf8mb4"),
         "connect_timeout": cfg.getint("database", "connect_timeout", fallback=10),
         "read_timeout": cfg.getint("database", "read_timeout", fallback=10),
         "write_timeout": cfg.getint("database", "write_timeout", fallback=10),
+        "ssl_ca": resolve_ssl_ca(db.get("ssl_ca"), auto_default=True),
     }
-
-    if mode == "direct":
-        ssl_ca_ini = cfg.get("database", "ssl_ca", fallback="ca.pem")
-        base.update(
-            {
-                "db_host": cfg.get("database", "host"),
-                "db_port": cfg.getint("database", "port"),
-                "ssl_ca": resolve_ssl_ca(ssl_ca_ini, auto_default=True),
-            }
-        )
-        if not base["db_host"]:
-            raise DbConfigError("database.host is required when connection.mode = direct.")
-        return base
-
-    base.update(
-        {
-            "ssh_host": cfg.get("ssh", "host"),
-            "ssh_port": cfg.getint("ssh", "port", fallback=22),
-            "ssh_username": cfg.get("ssh", "username"),
-            "ssh_password": cfg.get("ssh", "password"),
-            "remote_host": cfg.get("database", "remote_host", fallback="127.0.0.1"),
-            "remote_port": cfg.getint("database", "remote_port", fallback=3306),
-        }
-    )
+    if not base["db_host"]:
+        raise DbConfigError("database.host is required in db.ini.")
+    if not base["db_user"]:
+        raise DbConfigError("database.user is required in db.ini.")
     return base
 
 
@@ -108,9 +81,7 @@ def _config_from_streamlit_secrets() -> Optional[dict[str, Any]]:
     """
     Read DB config from st.secrets if available.
     Expected shape:
-      [connection] mode = "direct" | "ssh"
-      [database] ...
-      [ssh] ...   # only for ssh mode
+      [database] host, port, user, password, name, ...
     """
     try:
         import streamlit as st
@@ -120,18 +91,11 @@ def _config_from_streamlit_secrets() -> Optional[dict[str, Any]]:
     secrets = getattr(st, "secrets", None)
     if not secrets:
         return None
-    if "connection" not in secrets or "database" not in secrets:
+    if "database" not in secrets:
         return None
-
-    mode = str(secrets["connection"].get("mode", "direct")).strip().lower()
-    if mode not in ("direct", "ssh"):
-        raise DbConfigError(
-            f"Invalid connection mode {mode!r} in st.secrets — use 'direct' or 'ssh'."
-        )
 
     db = secrets["database"]
     base: dict[str, Any] = {
-        "mode": mode,
         "db_user": str(db["user"]),
         "db_password": str(db.get("password", "")),
         "db_name": str(db.get("name", "defaultdb")),
@@ -152,31 +116,14 @@ def _config_from_streamlit_secrets() -> Optional[dict[str, Any]]:
             auto_default=True,
         )
 
-    if mode == "direct":
-        base.update(
-            {
-                "db_host": str(db["host"]),
-                "db_port": int(db.get("port", 3306)),
-            }
-        )
-        if not base["db_host"]:
-            raise DbConfigError("database.host is required when connection.mode = direct.")
-        return base
-
-    if "ssh" not in secrets:
-        raise DbConfigError("Missing [ssh] section in st.secrets for ssh mode.")
-
-    ssh = secrets["ssh"]
     base.update(
         {
-            "ssh_host": str(ssh["host"]),
-            "ssh_port": int(ssh.get("port", 22)),
-            "ssh_username": str(ssh["username"]),
-            "ssh_password": str(ssh.get("password", "")),
-            "remote_host": str(db.get("remote_host", "127.0.0.1")),
-            "remote_port": int(db.get("remote_port", 3306)),
+            "db_host": str(db.get("host", "")),
+            "db_port": int(db.get("port", 3306)),
         }
     )
+    if not base["db_host"]:
+        raise DbConfigError("database.host is required in st.secrets.")
     return base
 
 
@@ -191,7 +138,6 @@ def _write_temp_ca_pem(ca_pem: str) -> str:
 def _config_direct_from_env() -> dict[str, Any]:
     ssl_env = os.environ.get("DB_SSL_CA")
     return {
-        "mode": "direct",
         "db_host": os.environ["DB_HOST"],
         "db_port": int(os.environ.get("DB_PORT", "3306")),
         "db_user": os.environ["DB_USER"],
@@ -205,28 +151,9 @@ def _config_direct_from_env() -> dict[str, Any]:
     }
 
 
-def _config_ssh_from_env() -> dict[str, Any]:
-    return {
-        "mode": "ssh",
-        "ssh_host": os.environ["DB_SSH_HOST"],
-        "ssh_port": int(os.environ.get("DB_SSH_PORT", "22")),
-        "ssh_username": os.environ["DB_SSH_USER"],
-        "ssh_password": os.environ.get("DB_SSH_PASSWORD", ""),
-        "db_user": os.environ["DB_USER"],
-        "db_password": os.environ.get("DB_PASSWORD", ""),
-        "db_name": os.environ.get("DB_NAME", "mng_db"),
-        "remote_host": os.environ.get("DB_REMOTE_HOST", "127.0.0.1"),
-        "remote_port": int(os.environ.get("DB_REMOTE_PORT", "3306")),
-        "charset": "utf8mb4",
-        "connect_timeout": 10,
-        "read_timeout": 10,
-        "write_timeout": 10,
-    }
-
-
 def config_cache_key() -> str:
     parts: list[str] = []
-    if os.environ.get("DB_HOST") or os.environ.get("DB_SSH_HOST"):
+    if os.environ.get("DB_HOST"):
         parts.append("env")
     elif _has_streamlit_secrets():
         parts.append("secrets")
@@ -245,7 +172,7 @@ def _has_streamlit_secrets() -> bool:
     except ImportError:
         return False
     secrets = getattr(st, "secrets", None)
-    return bool(secrets and "connection" in secrets and "database" in secrets)
+    return bool(secrets and "database" in secrets)
 
 
 def quote_table(name: str) -> str:
@@ -303,54 +230,27 @@ def create_direct_engine(cfg: dict[str, Any]) -> Engine:
     return engine
 
 
-def create_engine_and_tunnel(cfg: dict[str, Any]) -> tuple[Engine, SSHTunnelForwarder]:
-    server = SSHTunnelForwarder(
-        (cfg["ssh_host"], cfg["ssh_port"]),
-        ssh_username=cfg["ssh_username"],
-        ssh_password=cfg["ssh_password"],
-        remote_bind_address=(cfg["remote_host"], cfg["remote_port"]),
-    )
-    server.start()
-    engine = create_engine(
-        _sqlalchemy_url(cfg, "127.0.0.1", server.local_bind_port),
-        pool_pre_ping=True,
-        connect_args=_pymysql_connect_args(cfg),
-    )
-    with engine.connect() as conn:
-        conn.execute(text("SELECT 1"))
-    return engine, server
-
-
-def create_engine_from_config(cfg: dict[str, Any]) -> tuple[Engine, Optional[SSHTunnelForwarder]]:
-    if cfg["mode"] == "direct":
-        return create_direct_engine(cfg), None
-    engine, tunnel = create_engine_and_tunnel(cfg)
-    return engine, tunnel
+def create_engine_from_config(cfg: dict[str, Any]) -> Engine:
+    return create_direct_engine(cfg)
 
 
 _engine: Optional[Engine] = None
-_tunnel: Optional[SSHTunnelForwarder] = None
 
 
 def get_engine() -> Engine:
     """Return a shared engine (Streamlit cache or process-local singleton)."""
-    global _engine, _tunnel
+    global _engine
     try:
         import streamlit as st
 
         @st.cache_resource(show_spinner="Connecting to database…")
         def _cached_engine(cache_key: str) -> Engine:
             cfg = load_db_config()
-            engine, tunnel = create_engine_from_config(cfg)
-            if tunnel is not None:
-                st.session_state["_db_tunnel"] = tunnel
-            else:
-                st.session_state.pop("_db_tunnel", None)
-            return engine
+            return create_engine_from_config(cfg)
 
         return _cached_engine(config_cache_key())
     except ImportError:
         if _engine is None:
             cfg = load_db_config()
-            _engine, _tunnel = create_engine_from_config(cfg)
+            _engine = create_engine_from_config(cfg)
         return _engine

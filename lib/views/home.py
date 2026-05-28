@@ -10,13 +10,13 @@ from lib.page_utils import setup_page
 def render() -> None:
     setup_page(HOME_TITLE, "🏭")
     st.title(HOME_TITLE)
-    st.caption("Live MySQL/MariaDB (direct or SSH per db.ini)")
+    st.caption("Live MySQL/MariaDB (direct)")
 
     st.markdown(
         """
 This app reads and writes your database (GP2 MariaDB DDL).  
-Configure `db.ini` — **Aiven/direct** (`connection.mode = direct`) or **SSH tunnel** (`mode = ssh`).  
-See `db.ini.example` or set `DB_HOST` / `DB_SSH_HOST` environment variables.
+Configure `db.ini` for a direct connection (Aiven, etc.).  
+See `db.ini.example` or set `DB_HOST` environment variables.
 """
     )
 
