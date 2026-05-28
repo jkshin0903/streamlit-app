@@ -49,7 +49,11 @@ def resolve_ssl_ca(path: Optional[str], *, auto_default: bool = False) -> Option
 
 
 def load_db_config() -> dict[str, Any]:
-    """Load connection settings from environment variables or db.ini."""
+    """Load connection settings from st.secrets, env, or db.ini."""
+    secret_cfg = _config_from_streamlit_secrets()
+    if secret_cfg is not None:
+        return secret_cfg
+
     if os.environ.get("DB_HOST"):
         return _config_direct_from_env()
 
@@ -100,6 +104,90 @@ def load_db_config() -> dict[str, Any]:
     return base
 
 
+def _config_from_streamlit_secrets() -> Optional[dict[str, Any]]:
+    """
+    Read DB config from st.secrets if available.
+    Expected shape:
+      [connection] mode = "direct" | "ssh"
+      [database] ...
+      [ssh] ...   # only for ssh mode
+    """
+    try:
+        import streamlit as st
+    except ImportError:
+        return None
+
+    secrets = getattr(st, "secrets", None)
+    if not secrets:
+        return None
+    if "connection" not in secrets or "database" not in secrets:
+        return None
+
+    mode = str(secrets["connection"].get("mode", "direct")).strip().lower()
+    if mode not in ("direct", "ssh"):
+        raise DbConfigError(
+            f"Invalid connection mode {mode!r} in st.secrets — use 'direct' or 'ssh'."
+        )
+
+    db = secrets["database"]
+    base: dict[str, Any] = {
+        "mode": mode,
+        "db_user": str(db["user"]),
+        "db_password": str(db.get("password", "")),
+        "db_name": str(db.get("name", "defaultdb")),
+        "charset": str(db.get("charset", "utf8mb4")),
+        "connect_timeout": int(db.get("connect_timeout", 10)),
+        "read_timeout": int(db.get("read_timeout", 10)),
+        "write_timeout": int(db.get("write_timeout", 10)),
+    }
+
+    # Supports either file path (ssl_ca) or inline PEM (ca_pem) in secrets.
+    ssl_ca_secret = db.get("ssl_ca")
+    ca_pem = db.get("ca_pem")
+    if ca_pem:
+        base["ssl_ca"] = _write_temp_ca_pem(str(ca_pem))
+    else:
+        base["ssl_ca"] = resolve_ssl_ca(
+            str(ssl_ca_secret) if ssl_ca_secret is not None else None,
+            auto_default=True,
+        )
+
+    if mode == "direct":
+        base.update(
+            {
+                "db_host": str(db["host"]),
+                "db_port": int(db.get("port", 3306)),
+            }
+        )
+        if not base["db_host"]:
+            raise DbConfigError("database.host is required when connection.mode = direct.")
+        return base
+
+    if "ssh" not in secrets:
+        raise DbConfigError("Missing [ssh] section in st.secrets for ssh mode.")
+
+    ssh = secrets["ssh"]
+    base.update(
+        {
+            "ssh_host": str(ssh["host"]),
+            "ssh_port": int(ssh.get("port", 22)),
+            "ssh_username": str(ssh["username"]),
+            "ssh_password": str(ssh.get("password", "")),
+            "remote_host": str(db.get("remote_host", "127.0.0.1")),
+            "remote_port": int(db.get("remote_port", 3306)),
+        }
+    )
+    return base
+
+
+def _write_temp_ca_pem(ca_pem: str) -> str:
+    """Persist inline CA PEM from secrets to a local file path."""
+    pem_path = ROOT / ".streamlit" / ".runtime-ca.pem"
+    pem_path.parent.mkdir(parents=True, exist_ok=True)
+    pem_path.write_text(ca_pem, encoding="utf-8")
+    return str(pem_path)
+
+
 def _config_direct_from_env() -> dict[str, Any]:
     ssl_env = os.environ.get("DB_SSL_CA")
     return {
@@ -140,6 +228,8 @@ def config_cache_key() -> str:
     parts: list[str] = []
     if os.environ.get("DB_HOST") or os.environ.get("DB_SSH_HOST"):
         parts.append("env")
+    elif _has_streamlit_secrets():
+        parts.append("secrets")
     elif CONFIG_PATH.is_file():
         parts.append(str(CONFIG_PATH.stat().st_mtime))
     else:
@@ -147,6 +237,15 @@ def config_cache_key() -> str:
     if DEFAULT_SSL_CA.is_file():
         parts.append(str(DEFAULT_SSL_CA.stat().st_mtime))
     return ":".join(parts)
+
+
+def _has_streamlit_secrets() -> bool:
+    try:
+        import streamlit as st
+    except ImportError:
+        return False
+    secrets = getattr(st, "secrets", None)
+    return bool(secrets and "connection" in secrets and "database" in secrets)
 
 
 def quote_table(name: str) -> str:
