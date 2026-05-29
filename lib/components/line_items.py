@@ -7,6 +7,7 @@ from typing import Any
 import streamlit as st
 
 from lib import repository
+from lib.constants import MAX_PO_LINE_ITEMS
 from lib.labels import BTN_ADD_LINE, BTN_REMOVE, col
 
 
@@ -36,7 +37,10 @@ def render_line_items(
 
     st.markdown(f"**{col('product_no')} / line items**")
     if st.button(BTN_ADD_LINE, key=f"{form_key_prefix}_add"):
-        lines.append({"product_no": None, "quantity": 1, "unit_price": 0.0})
+        if len(lines) >= MAX_PO_LINE_ITEMS:
+            st.warning(f"Maximum {MAX_PO_LINE_ITEMS} line items allowed.")
+        else:
+            lines.append({"product_no": None, "quantity": 1, "unit_price": 0.0})
         st.session_state[state_key] = lines
         st.rerun()
 
@@ -80,16 +84,16 @@ def render_line_items(
             with cols[2]:
                 line["unit_price"] = st.number_input(
                     col("unit_price"),
-                    min_value=0.0,
-                    value=float(line.get("unit_price", 0)),
-                    format="%.0f",
+                    min_value=0.01,
+                    value=max(float(line.get("unit_price", 0)), 0.01),
+                    format="%.2f",
                     key=f"{form_key_prefix}_price_{idx}",
                     label_visibility="collapsed",
                 )
             subtotal = line["quantity"] * line["unit_price"]
             total += subtotal
             with cols[3]:
-                st.caption(f"Subtotal ₩{subtotal:,.0f}")
+                st.caption(f"Subtotal ${subtotal:,.2f}")
                 if st.button(BTN_REMOVE, key=f"{form_key_prefix}_del_{idx}"):
                     to_remove.append(idx)
         else:
@@ -106,7 +110,7 @@ def render_line_items(
         st.rerun()
 
     if show_unit_price:
-        st.metric("Total Amount", f"₩{total:,.0f}")
+        st.metric("Total Order Amount", f"${total:,.2f}")
 
     return [dict(l) for l in lines if l.get("product_no") is not None]
 

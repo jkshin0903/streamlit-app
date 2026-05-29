@@ -90,12 +90,16 @@ Aiven의 `defaultdb`에 GP2 테이블이 없으면 DDL을 먼저 적용해야 �
 | 08 | Vendor | `vendor` | 공급업체 마스터 CRUD |
 | 09 | Product | `product` | 제품 마스터 CRUD |
 | 10 | Technician | `technician` | 기술자 마스터 CRUD (주문 화면 FK용) |
+| 11 | Installation Report | — | SCR-RPT-01: 사업장·유형·상태별 설치 현황, 소계/합계, Excel |
+| 12 | Annual Purchase Report | — | SCR-RPT-02: 연간 구매·처분 목록, 벤더 소계, PO 드릴다운 |
+| 13 | Machine Performance Report | — | SCR-RPT-03: 수익·수리·Recommendation, Move/PO 연동 |
 
 ## 권장 업무 흐름
 
 1. **마스터**: Business Location → Vendor → Product → Technician  
 2. **조달**: Purchase Request → Purchase Order → Invoice → Machine 등록  
-3. **운영**: Contract → Machine + 계약 이력 → Order 처리  
+3. **운영**: Contract → Machine + 계약 이력 → Order (Move) 처리  
+4. **보고**: Installation Report · Annual Purchase · Machine Performance  
 
 ## 프로젝트 구조
 

@@ -10,7 +10,7 @@ from lib.page_utils import setup_page
 def render() -> None:
     setup_page(HOME_TITLE, "🏭")
     st.title(HOME_TITLE)
-    st.caption("Live MySQL/MariaDB (direct)")
+    st.caption("Live MySQL/MariaDB (direct) · Amusement Machine Asset Tracking")
 
     st.markdown(
         """
@@ -21,6 +21,27 @@ See `db.ini.example` or set `DB_HOST` environment variables.
     )
 
     st.divider()
+
+    st.subheader("Functional spec screens")
+
+    c1, c2 = st.columns(2)
+    with c1:
+        st.markdown(
+            """
+**Input (SCR-IN)**  
+- **06 Purchase Order** — PO entry, PDF/fax, Pending status  
+- **04 Order** — Install / remove / move (multi-machine)  
+"""
+        )
+    with c2:
+        st.markdown(
+            """
+**Reports (SCR-RPT)**  
+- **11 Installation Report** — equipment by location  
+- **12 Annual Purchase Report** — purchases & disposal for accounting  
+- **13 Machine Performance Report** — revenue, repair, recommendations  
+"""
+        )
 
     st.subheader("Recommended Workflow")
 
@@ -44,8 +65,8 @@ See `db.ini.example` or set `DB_HOST` environment variables.
 **3. Equipment operations**  
 {col('contract')} → {col('machine')} → {col('machine_contract_hst')}  
 
-**4. Orders**  
-{col('order')} (Pending) → assign {col('technician_id')} → Completed
+**4. Field service**  
+{col('order')} (Draft → Pending → Completed)  
 """
         )
 

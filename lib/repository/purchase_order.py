@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, Optional
 
 from lib import db_store
-from lib.constants import PURCHASE_ORDER_STATUSES
+from lib.constants import LEGACY_PURCHASE_ORDER_STATUSES, PURCHASE_ORDER_STATUSES
 from lib.labels import col
 
 from lib.repository._common import RepositoryError, exists, has_ref, iso_date, validate_enum
@@ -28,12 +28,16 @@ def list_purchase_order_items(po_id: int) -> list[dict[str, Any]]:
     return db_store.filter_items("purchase_order_item", "purchase_order_id", po_id)
 
 
+def _allowed_po_statuses() -> list[str]:
+    return PURCHASE_ORDER_STATUSES + LEGACY_PURCHASE_ORDER_STATUSES
+
+
 def save_purchase_order(
     header: dict[str, Any], items: list[dict[str, Any]]
 ) -> dict[str, Any]:
     validate_enum(
         header["purchase_order_status"],
-        PURCHASE_ORDER_STATUSES,
+        _allowed_po_statuses(),
         "purchase_order_status",
     )
     if not exists("vendor", "vendor_id", header["vendor_id"]):
@@ -53,8 +57,8 @@ def save_purchase_order(
         price = float(item["unit_price"])
         if qty < 1:
             raise RepositoryError(f"{col('quantity')} must be at least 1.")
-        if price < 0:
-            raise RepositoryError(f"{col('unit_price')} must be 0 or greater.")
+        if price <= 0:
+            raise RepositoryError(f"{col('unit_price')} must be greater than 0.")
         norm_items.append(
             {
                 "product_no": item["product_no"],
