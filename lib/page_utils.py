@@ -30,15 +30,16 @@ def setup_page(title: str, icon: str = "") -> None:
         raise
 
 
-def begin_page(entity: str, icon: str = "") -> str:
+def begin_page(entity: str, icon: str = "", *, title: str | None = None) -> str:
     """
-    Single display name for sidebar (via pages/NN_Name.py filename) and st.title.
-    entity: table/entity key, e.g. business_location -> "Business Location"
+    Page heading and browser tab title.
+    entity: table/entity key when title is omitted (e.g. business_location).
+    title: override display name (sidebar label uses st.navigation in app.py).
     """
-    title = col(entity)
-    setup_page(title, icon)
-    st.title(title)
-    return title
+    display = title if title is not None else col(entity)
+    setup_page(display, icon)
+    st.title(display)
+    return display
 
 
 def handle_repo_error(fn):

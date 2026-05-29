@@ -1,5 +1,6 @@
 """Equipment & procurement management — home. Run: streamlit run app.py"""
 
-from lib.views.home import render
+from lib.navigation import build_navigation
 
-render()
+pg = build_navigation()
+pg.run()

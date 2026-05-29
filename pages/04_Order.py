@@ -29,8 +29,10 @@ from lib.labels import (
 from lib.models import parse_date
 from lib.page_utils import begin_page, handle_repo_error
 
-begin_page("order", "📦")
-st.caption("SCR-IN-02 · Machine Install / Remove Order")
+ORDER_TITLE = "Machine Install/Remove Order"
+
+begin_page("order", "📦", title=ORDER_TITLE)
+st.caption("SCR-IN-02 · Machine Install/Remove Order")
 
 if st.session_state.get("prefill_move_serial"):
     sn = st.session_state.pop("prefill_move_serial")
