@@ -17,7 +17,7 @@ from . import (
     technician,
     vendor,
 )
-from . import display
+from . import display, reports
 
 # business_location
 list_locations = business_location.list_locations
@@ -61,6 +61,7 @@ save_machine_contract_hst = machine.save_machine_contract_hst
 list_orders = order.list_orders
 get_order = order.get_order
 save_order = order.save_order
+save_move_order_batch = order.save_move_order_batch
 delete_order = order.delete_order
 
 # purchase_request
